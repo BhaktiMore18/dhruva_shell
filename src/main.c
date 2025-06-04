@@ -1,6 +1,54 @@
 #include <stdlib.h>  // for malloc(), realloc(), exit(), EXIT_SUCCESS
 #include <stdio.h>   // for getchar(), fprintf(), printf(), stderr
 
+#define DSH_RL_BUFSIZE 1024  // Default buffer size to start reading input
+
+
+/*
+ * This function reads a full line of input from stdin (usually the terminal).
+ * It keeps reading until the user presses Enter (newline) or Ctrl+D (EOF).
+ * Since we don’t know in advance how long the input will be,
+ * we dynamically grow the buffer if needed.
+ */
+char *dsh_read_line(void) {
+    int bufsize = DSH_RL_BUFSIZE;  // initial size of our input buffer
+    int position = 0;              // current position to insert next character
+    char *buffer = malloc(sizeof(char) * bufsize);  // allocate memory
+    int c;  // NOTE: using int here is **very important** to handle EOF correctly
+
+    // Check if malloc failed
+    if (!buffer) {
+        fprintf(stderr, "dsh: allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read characters one by one until newline or EOF
+    while (1) {
+        c = getchar();  // reads one character from stdin
+
+        // If we hit EOF (Ctrl+D) or user presses Enter, we stop reading
+        if (c == EOF || c == '\n') {
+            buffer[position] = '\0';  // null-terminate the string
+            return buffer;  // return the full line we read
+        } else {
+            buffer[position] = c;  // store the character
+        }
+        position++;  // move to the next position
+
+        // If buffer is full, we need more space — reallocate it
+        if (position >= bufsize) {
+            bufsize += DSH_RL_BUFSIZE;  // increase buffer size
+            buffer = realloc(buffer, bufsize);  // try to reallocate more memory
+
+            // Check if realloc failed
+            if (!buffer) {
+                fprintf(stderr, "dsh: allocation error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+}
+
 /*
  * dsh_loop is the heart of our shell.
  * This loop keeps prompting the user, reading their input,
