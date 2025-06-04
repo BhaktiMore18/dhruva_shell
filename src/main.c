@@ -2,6 +2,58 @@
 #include <stdio.h>   // for getchar(), fprintf(), printf(), stderr
 
 #define DSH_RL_BUFSIZE 1024  // Default buffer size to start reading input
+#define DSH_TOK_BUFSIZE 64  // Starting size for our array of tokens (arguments)
+#define DSH_TOK_DELIM " \t\r\n\a"  // These characters will separate tokens (like spaces, tabs, newlines, etc.)
+
+/*
+ * This function takes a full line of input (like: "ls -l /home")
+ * and splits it into individual parts (tokens) like: ["ls", "-l", "/home"]
+ * It returns an array of strings (char pointers), which will be passed to exec-like functions.
+ */
+char **dsh_split_line(char *line) {
+    int bufsize = DSH_TOK_BUFSIZE;  // how many tokens we can store for now
+    int position = 0;               // current position in the tokens array
+
+    // Allocate memory for storing token pointers (char* array)
+    char **tokens = malloc(bufsize * sizeof(char*));  
+    char *token;  // to temporarily hold each token
+
+    // Always check if malloc succeeded!
+    if (!tokens) {
+        fprintf(stderr, "dsh: allocation error\n");
+        exit(EXIT_FAILURE);  // If we can’t allocate memory, exit the program
+    }
+
+    /*
+     * strtok breaks the string `line` into tokens separated by delimiters.
+     * It modifies the original string by inserting '\0' at the end of each token.
+     * First call gives the first token, subsequent calls (with NULL) give the next ones.
+     */
+    token = strtok(line, DSH_TOK_DELIM);
+    
+    while (token != NULL) {
+        tokens[position] = token;  // store the pointer to this token
+        position++;  // move to the next slot in the tokens array
+
+        // If we’ve run out of space in the tokens array, make it bigger!
+        if (position >= bufsize) {
+            bufsize += DSH_TOK_BUFSIZE;  // increase the buffer size
+            tokens = realloc(tokens, bufsize * sizeof(char*));  // try to reallocate
+
+            if (!tokens) {
+                fprintf(stderr, "dsh: allocation error\n");
+                exit(EXIT_FAILURE);  // again, check if reallocation failed
+            }
+        }
+
+        // Get the next token (this will be NULL if we're done)
+        token = strtok(NULL, DSH_TOK_DELIM);
+    }
+
+    // After the loop, we NULL-terminate the array so we know where it ends
+    tokens[position] = NULL;
+    return tokens;
+}
 
 
 /*
@@ -48,6 +100,8 @@ char *dsh_read_line(void) {
         }
     }
 }
+
+
 
 /*
  * dsh_loop is the heart of our shell.
