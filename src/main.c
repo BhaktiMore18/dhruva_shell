@@ -1,9 +1,60 @@
+#include <sys/types.h>//for pid_t
+#include <sys/wait.h>//for waitpid(), WIFEXITED, WUNTRACED, WIFSIGNALED
+#include <unistd.h> // for fork(), execvp()
 #include <stdlib.h>  // for malloc(), realloc(), exit(), EXIT_SUCCESS
 #include <stdio.h>   // for getchar(), fprintf(), printf(), stderr
 
 #define DSH_RL_BUFSIZE 1024  // Default buffer size to start reading input
 #define DSH_TOK_BUFSIZE 64  // Starting size for our array of tokens (arguments)
 #define DSH_TOK_DELIM " \t\r\n\a"  // These characters will separate tokens (like spaces, tabs, newlines, etc.)
+
+/*
+ * This function launches a program.
+ * It does this by forking the current process, and in the child process,
+ * it replaces itself with the program we want to run using execvp().
+ * 
+ * args is a NULL-terminated array of strings (just like we got from dsh_split_line).
+ * args[0] is the command (like "ls"), args[1], args[2], etc. are its arguments.
+ */
+int dsh_launch(char **args) {
+    pid_t pid, wpid;  // pid: process ID of child, wpid: for waiting
+    int status;       // to store the exit status of the child
+
+    // Fork the current process: create a duplicate process
+    pid = fork();
+
+    if (pid == 0) {
+        // This block runs in the child process
+
+        /*
+         * execvp replaces the current child process image with the command in args.
+         * If it works, it doesn't return.
+         * If it fails (e.g., command not found), it returns -1.
+         */
+        if (execvp(args[0], args) == -1) {
+            perror("dsh");  // print error message if exec fails
+        }
+
+        // If exec failed, we manually exit the child process
+        exit(EXIT_FAILURE);
+    } 
+    else if (pid < 0) {
+        // fork() failed: maybe out of memory or too many processes
+        perror("dsh");  // print the error message
+    } 
+    else {
+        // This block runs in the parent process
+
+        // Wait for the child process to finish
+        // We use waitpid to wait specifically for the child we just created
+        do {
+            wpid = waitpid(pid, &status, WUNTRACED);
+            // We loop until the child either exits normally or is terminated by a signal
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+
+    return 1;  // Returning 1 so that the shell continues running
+}
 
 /*
  * This function takes a full line of input (like: "ls -l /home")
