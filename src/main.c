@@ -8,6 +8,56 @@
 #define DSH_TOK_BUFSIZE 64  // Starting size for our array of tokens (arguments)
 #define DSH_TOK_DELIM " \t\r\n\a"  // These characters will separate tokens (like spaces, tabs, newlines, etc.)
 
+int dsh_cd(char **args);
+int dsh_help(char **args);
+int dsh_exit(char **args);
+
+char *builtin_str[] = {
+    "cd",
+    "help",
+    "exit"
+};
+
+int (*builtin_func[]) (char **) = {
+    &dsh_cd,
+    &dsh_help,
+    &dsh_exit
+};
+
+int dsh_num_builtins(){
+    return sizeof(builtin_str) / sizeof(char *);
+}
+
+int dsh_cd(char **args){
+    if(args[1] == NULL){
+        fprintf(stderr, "dsh: expected argument to \"cd\"\n");
+    }
+    else {
+        if(chdir(args[1]) != 0){
+            perror("dsh");
+        }
+    }
+    return 1;
+}
+
+int dsh_help(char **args){
+    int it;
+    printf("Bhakti's Dhruva Shell");
+    printf("Type program names and arguments, and hit enter.\n");
+    printf("The following are built in: \n");
+
+    for(it = 0; it < dsh_num_builtins(); it++){
+        printf("%s\n", builtin_str[it]);
+    }
+
+    printf("Use the man command for information on other programs.\n");
+    return 1;
+}
+
+int dsh_exit(char **args){
+    return 0;
+}
+
 /*
  * This function launches a program.
  * It does this by forking the current process, and in the child process,
