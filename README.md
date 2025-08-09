@@ -32,19 +32,18 @@ flowchart TD
 
 ## Chapters
 
-1. [Shell Main Loop
-](01_shell_main_loop_.md)
+1. [Shell Main Loop](docs/Shell_Main_Loop.md)
 2. [Input Handler
-](02_input_handler_.md)
+](docs/Input_Handler_.md)
 3. [Command Parser
-](03_command_parser_.md)
+](docs/Command_Parser_.md)
 4. [Command Dispatcher
-](04_command_dispatcher_.md)
+](docs/Command_Dispatcher_.md)
 5. [Built-in Commands
-](05_built_in_commands_.md)
+](docs/Built_In_Commands_.md)
 6. [External Program Launcher
-](06_external_program_launcher_.md)
+](docs/External_Program_Launcher_.md)
 7. [Dynamic Memory Manager
-](07_dynamic_memory_manager_.md)
+](docs/Dynamic_Memory_Manager_.md)
 
 ---
